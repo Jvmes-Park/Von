@@ -1,0 +1,6 @@
+how to compile von:
+
+-gcc -o von von.c ../vm/vm.c ../vm/chunk.c and etc.
+
+Todo:
+fix compile errors
