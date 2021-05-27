@@ -23,7 +23,7 @@ void writeChunk(Chunk* chunk, uint8_t byte, int line) {
 		int oldCapacity = chunk -> capacity;
 		chunk -> capacity = GROW_CAPACITY(oldCapacity);
 		chunk -> code = GROW_ARRAY(uint8_t, chunk -> code, oldCapacity, chunk -> capacity);
-		chunk -> liness = GROW_ARRAY(int, chunk -> lines, oldCapacity, chunk -> capacity);
+		chunk -> lines = GROW_ARRAY(int, chunk -> lines, oldCapacity, chunk -> capacity);
 	}
 	//If there is space, put the chunk at the latest spot.
 	chunk -> code[chunk -> count] = byte;

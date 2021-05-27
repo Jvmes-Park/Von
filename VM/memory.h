@@ -4,9 +4,9 @@
 #include "common.h"
 
 //Double the size of the Array to make space.
-#define GROW_CAPACITY(capacity) \ ((capacity) < 8 ? 8 : (capacity)*2)
+#define GROW_CAPACITY(capacity) ((capacity) < 8 ? 8 : (capacity)*2)
 
-#define GROW_ARRAY(type, pointer, oldCOunt, newCount) \
+#define GROW_ARRAY(type, pointer, oldCount, newCount) \
 	(type*)reallocate(pointer, sizeof(type) * (oldCount), \
 			sizeof(type) * (newCount))
 
