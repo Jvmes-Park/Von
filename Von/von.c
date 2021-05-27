@@ -6,10 +6,14 @@
 #include "../VM/debug.h"
 #include "../VM/vm.h"
 
-static void repl() {
+void indent() {
+	printf(">> ");
+}
+
+static void REPL() {
 	char line[1024];
 	for (;;) {
-		printf(">> ");
+		indent();
 		if (!fgets(line, sizeof(line), stdin)) {
 			printf("\n");
 			break;
@@ -51,7 +55,7 @@ static void runFile(const char* path) {
 int main (int argc, const char* argv[]) {
 	initVM();
 	if (argc == 1) {
-		repl();
+		REPL();
 	}
 	else if (argc == 2) {
 		runFile(argv[1]);
