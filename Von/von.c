@@ -10,7 +10,15 @@ void indent() {
 	printf(">> ");
 }
 
+void prompt() {
+	printf("Von Programming Language\n");
+	printf("Version: 1.0\n");
+	printf("Type 'help' for information\n");
+}
+
 static void REPL() {
+	prompt();
+	printf("\n");
 	char line[1024];
 	for (;;) {
 		indent();
@@ -53,6 +61,7 @@ static void runFile(const char* path) {
 }
 
 int main (int argc, const char* argv[]) {
+	system("cls");
 	initVM();
 	if (argc == 1) {
 		REPL();

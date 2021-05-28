@@ -114,8 +114,8 @@ static Token Number() {
 }
 
 static bool isAlpha(char c) {
-	return (c <= 'a' && c >= 'z' |
-		c <= 'A' && c >= 'Z' |
+	return (c >= 'a' && c <= 'z' ||
+		c >= 'A' && c <= 'Z' ||
 		c == '_');
 }
 
@@ -157,6 +157,16 @@ static TokenType identifierType() {
 						return checkKeyword(1, 0, "", T_IF);
 				}
 			}
+		case '.':
+			if (scanner.current - scanner.start > 1) {
+				switch(scanner.start[1]) {
+					case 'h':
+						return checkKeyword(2, 3, "elp", T_HELP);
+					case 'e':
+						return checkKeyword(2, 3, "xit", T_EXIT);
+				}
+			}
+			break;
 		case 'f':
 			if (scanner.current - scanner.start > 1) {
 				switch (scanner.start[1]) {
