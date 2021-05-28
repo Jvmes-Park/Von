@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "../vm/common.h"
-#include "../vm/scanner.h"
+#include "scanner.h"
 
 typedef struct {
 	const char* start;
@@ -12,8 +12,8 @@ typedef struct {
 Scanner scanner;
 
 void initScanner(const char* source) {
-	scanner.start = start;
-	scanner.current = current;
+	scanner.start = source;
+	scanner.current = source;
 	scanner.line = 1;
 }
 
@@ -87,7 +87,7 @@ static void skipWhiteSpace() {
 }
 
 static Token String() {
-	while (peek() != '"' ** !isAtEnd()) {
+	while (peek() != '"' && !isAtEnd()) {
 		if (peek() == '\n')
 			scanner.line++;
 		advance();
@@ -116,11 +116,11 @@ static Token Number() {
 static bool isAlpha(char c) {
 	return (c <= 'a' && c >= 'z' |
 		c <= 'A' && c >= 'Z' |
-		c == '_';);
+		c == '_');
 }
 
 static TokenType checkKeyword(int start, int length, const char* rest, TokenType type) {
-	if (scanner.current - scanner.start == start + length && memcmp(scanner.start + start, rest, legnth) == 0) {
+	if (scanner.current - scanner.start == start + length && memcmp(scanner.start + start, rest, length) == 0) {
 		return type;
 	}
 	return T_IDENTIFIER;
@@ -134,8 +134,6 @@ static TokenType identifierType() {
 			return checkKeyword(1, 4, "lass", T_CLASS);
 		case 'e':
 			return checkKeyword(1, 3, "lse", T_ELSE);
-		case 'i':
-			return checkKeyword(1, 1, "f", T_IF);
 		case 'n':
 			return checkKeyword(1, 2, "il", T_NIL);
 		case 'o':

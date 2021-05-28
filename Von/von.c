@@ -18,7 +18,7 @@ static void REPL() {
 			printf("\n");
 			break;
 		}
-		intepret(line);
+		interpret(line);
 	}
 }
 
@@ -45,11 +45,11 @@ static char* readFile(const char* path) {
 
 static void runFile(const char* path) {
 	char* source = readFile(path);
-	IntepretResult result = interpret(source);
+	InterpretResult result = interpret(source);
 	free(source);
 
 	if (result == INTERPRET_COMPILE_ERROR) exit(65);
-	if (result == INTEPRET_RUNTIME_ERROR) exit(70);
+	if (result == INTERPRET_RUNTIME_ERROR) exit(70);
 }
 
 int main (int argc, const char* argv[]) {
@@ -65,6 +65,5 @@ int main (int argc, const char* argv[]) {
 		exit(64);
 	}
 	freeVM();
-	freeChunk(&chunk);
 	return 0;
 }

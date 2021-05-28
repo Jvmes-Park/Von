@@ -2,7 +2,7 @@
 #include "../vm/common.h"
 #include "scanner.h"
 
-void compiler(const char* source) {
+void compile(const char* source) {
 	initScanner(source);
 	int line = -1;
 	for (;;) {
@@ -15,6 +15,6 @@ void compiler(const char* source) {
 			printf("    | ");
 		}	
 		printf("%2d '%.*s'\n", token.type, token.length, token.start);
-		if (token.type == TOKEN_EOF) break;
+		if (token.type == T_EOF) break;
 	}
 }

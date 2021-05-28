@@ -13,7 +13,7 @@ typedef enum {
 
 	T_AND, T_CLASS, T_ELSE, T_FALSE, T_FOR, T_FUN, T_IF, T_NIL, 
 	T_OR, T_PRINT, T_RETURN, T_SUPER, T_THIS, T_TRUE, T_VAR, 
-	T_WHILE, T_IMPORT;
+	T_WHILE, T_IMPORT,
 
 	T_ERROR, T_EOF
 } TokenType;

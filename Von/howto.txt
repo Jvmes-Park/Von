@@ -1,6 +1,7 @@
 how to compile von:
 
--gcc -o von von.c ../vm/vm.c ../vm/chunk.c and etc.
+-gcc -o von von.c ../vm/vm.c ../vm/chunk.c ../vm/debug.c ../vm/memory.c
+../vm/value.c ../vm/vm.c ../compiler/compiler.c ../compiler/scanner.c
 
 Todo:
-fix compile errors
+fix scanning issue with identifiers.
