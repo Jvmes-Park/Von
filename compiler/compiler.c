@@ -10,6 +10,28 @@ typedef struct {
 	bool panicMode;
 } Parser;
 
+typedef enum {
+	P_NONE,
+	P_ASSIGNMENT,
+	P_OR,
+	P_AND,
+	P_EQUALITY,
+	P_COMPARISON,
+	P_TERM,
+	P_FACTOR,
+	P_UNARY,
+	P_CALL,
+	P_PRIMARY
+} Precedence;
+
+typedef void (*ParseFn)();
+
+typedef struct {
+	ParseFn prefix;
+	ParseFn infix;
+	Precedence precedence;
+} ParseRule;
+
 Parser parser;
 Chunk* compilingChunk;
 
@@ -72,8 +94,79 @@ static void emitReturn() {
 	emitByte(OP_RETURN);
 }
 
+static uin8_t makeConstant(Value value) {
+	int constant = addConstant(currentChunk(), value);
+	if (constant > UINT_MAX) {
+		error("Too many constants in one chunk.");
+		return 0;
+	}
+	return (uint8_t)constant;
+}
+
+static void emitConstant(Value value) {
+	emitBytes(OP_CONSTANT, makeConstant(value));
+}
+
 static void endCompiler() {
 	emitReturn();
+}
+
+static void binary() {
+	TokenType operatorType = parser.previous.type;
+	ParseRule* rule = getRule(operatorType);
+	parsePrecedence((Precedence)(rule -> precedence + 1));
+	switch (operatorType) {
+		case T_PLUS:
+			emitByte(OP_ADD);
+			break;
+		case T_MINUS:
+			emitByte(OP_SUBTRACT);
+			break;
+		case T_STAR:
+			emitByte(OP_MULTIPLY);
+			break;
+		case T_SLASH:
+			emitByte(OP_DIVIDE);
+			break;
+		default:
+			return;
+	}
+}
+
+static void grouping() {
+	expression();
+	consume(T_RIGHT_PAREN, "Expect ')' after expression.");
+}
+
+static void number() {
+	double value = strtod(parser.previous.start, NULL);
+	emitConstant(value);
+}
+
+static void unary() {
+	TokenType operatorType = parser.previous.type;
+	parsePrecedence(P_UNARY);
+	switch(operatorType) {
+		case T_MINUS: 
+			emitByte(OP_NEGATE);
+			break;
+		default:
+			return;
+	}
+}
+
+ParseRule rules[] = {
+	[T_LEFT_PAREN] = {grouping, NULL, P_NONE},
+	[T_RIGHT_PAREN] = {NULL, NULL, P_NONE},
+	[T_LEFT_BRACE] = {NULL, NULL, P_NONE},	
+};
+
+static void parsePrecendence(PRecendence precedence) {
+
+}
+
+static void expression() {
+	parsePrecedence(P_ASSIGNMENT);
 }
 
 void compile(const char* source) {
