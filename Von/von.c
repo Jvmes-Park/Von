@@ -13,7 +13,7 @@ void indent() {
 void prompt() {
 	printf("Von Programming Language\n");
 	printf("Version: 1.0\n");
-	printf("Type 'help' for information\n");
+	printf("Type '.help' for information\n");
 }
 
 static void REPL() {
