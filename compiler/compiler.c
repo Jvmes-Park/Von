@@ -3,6 +3,10 @@
 #include "../vm/common.h"
 #include "scanner.h"
 
+#ifdef DEBUG_PRINT_CODE
+#include "../vm/debug.h"
+#endif
+
 typedef struct {
 	Token current;
 	Token previous;
@@ -109,7 +113,16 @@ static void emitConstant(Value value) {
 
 static void endCompiler() {
 	emitReturn();
+#ifdef DEBUG_PRINT_CODE
+	if (!parser.hadError) {
+		disassembleChunk(currentChunk(), "code");
+	}
+#endif
 }
+
+static void expression();
+static void ParseRule* getRule(TokenType type);
+static void parsePrecedence(Precedence precedence);
 
 static void binary() {
 	TokenType operatorType = parser.previous.type;
@@ -158,11 +171,61 @@ static void unary() {
 ParseRule rules[] = {
 	[T_LEFT_PAREN] = {grouping, NULL, P_NONE},
 	[T_RIGHT_PAREN] = {NULL, NULL, P_NONE},
-	[T_LEFT_BRACE] = {NULL, NULL, P_NONE},	
+	[T_LEFT_BRACE] = {NULL, NULL, P_NONE},
+	[T_RIGHT_BRACE] = {NULL, NULL, P_NONE},	
+	[T_COMMA] = {NULL, NULL, P_NONE},	
+	[T_DOT] = {NULL, NULL, P_NONE},	
+	[T_MINUS] = {unary, binary, P_TERM},	
+	[T_PLUS] = {NULL, binary, P_TERM},	
+	[T_SEMICOLON] = {NULL, NULL, P_NONE},	
+	[T_SLASH] = {NULL, binary, P_FACTOR},	
+	[T_STAR] = {NULL, binary, P_FACTOR},	
+	[T_BANG] = {NULL, NULL, P_NONE},	
+	[T_BANG_EQUAL] = {NULL, NULL, P_NONE},	
+	[T_LESS] = {NULL, NULL, P_NONE},	
+	[T_LESS_EQUAL] = {NULL, NULL, P_NONE},	
+	[T_GREATER] = {NULL, NULL, P_NONE},	
+	[T_GREATER_EQUAL] = {NULL, NULL, P_NONE},	
+	[T_IDENTIFIER] = {NULL, NULL, P_NONE},	
+	[T_STRING] = {NULL, NULL, P_NONE},	
+	[T_NUMBER] = {number, NULL, P_NONE},	
+	[T_AND] = {NULL, NULL, P_NONE},	
+	[T_CLASS] = {NULL, NULL, P_NONE},	
+	[T_ELSE] = {NULL, NULL, P_NONE},	
+	[T_FALSE] = {NULL, NULL, P_NONE},	
+	[T_FOR] = {NULL, NULL, P_NONE},	
+	[T_FUN] = {NULL, NULL, P_NONE},	
+	[T_IF] = {NULL, NULL, P_NONE},	
+	[T_NIL] = {NULL, NULL, P_NONE},	
+	[T_OR] = {NULL, NULL, P_NONE},	
+	[T_PRINT] = {NULL, NULL, P_NONE},	
+	[T_RETURN] = {NULL, NULL, P_NONE},	
+	[T_SUPER] = {NULL, NULL, P_NONE},	
+	[T_THIS] = {NULL, NULL, P_NONE},	
+	[T_TRUE] = {NULL, NULL, P_NONE},	
+	[T_VAR] = {NULL, NULL, P_NONE},	
+	[T_WHILE] = {NULL, NULL, P_NONE},	
+	[T_ERROR] = {NULL, NULL, P_NONE},	
+	[T_EOF] = {NULL, NULL, P_NONE},	
 };
 
 static void parsePrecendence(PRecendence precedence) {
+	advance();
+	ParseFn prefixRule = getRule(parser.previous.type) -> prefix;
+	if (prefixRule == NULL) {
+		error("Expect expression.");
+		return;
+	}
+	prefixRule();
+	while (precedence <= getRule(parser.current.type) -> precedence) {
+		advance();
+		ParseFn infixRule = getRule(parser.previous.type) -> infix;
+		infixRule();
+	}
+}
 
+static ParseRule* getRule(TokenType type) {
+	return &rules[type];
 }
 
 static void expression() {
