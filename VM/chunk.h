@@ -12,6 +12,9 @@ typedef enum {
 	OP_NEGATE,
 	OP_CONSTANT,
 	OP_RETURN,
+	OP_NIL,
+	OP_TRUE,
+	OP_FALSE,
 } OpCode;
 
 typedef struct {

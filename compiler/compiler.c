@@ -165,6 +165,22 @@ static void binary() {
 	}
 }
 
+static void literal() {
+	switch(parser.previous.type) {
+		case T_FALSE:
+			emitByte(OP_FALSE);
+			break;
+		case T_NIL:
+			emitByte(OP_NIL);
+			break;
+		case T_TRUE:
+			emitByte(OP_TRUE);
+			break;
+		default:
+			return;
+	}
+}
+
 static void grouping() {
 	expression();
 	consume(T_RIGHT_PAREN, "Expect ')' after expression.");
@@ -210,11 +226,11 @@ ParseRule rules[] = {
 	[T_AND] = {NULL, NULL, P_NONE},	
 	[T_CLASS] = {NULL, NULL, P_NONE},	
 	[T_ELSE] = {NULL, NULL, P_NONE},	
-	[T_FALSE] = {NULL, NULL, P_NONE},	
+	[T_FALSE] = {literal, NULL, P_NONE},	
 	[T_FOR] = {NULL, NULL, P_NONE},	
 	[T_FUN] = {NULL, NULL, P_NONE},	
 	[T_IF] = {NULL, NULL, P_NONE},	
-	[T_NIL] = {NULL, NULL, P_NONE},	
+	[T_NIL] = {literal, NULL, P_NONE},	
 	[T_OR] = {NULL, NULL, P_NONE},	
 	[T_PRINT] = {NULL, NULL, P_NONE},	
 	[T_RETURN] = {NULL, NULL, P_NONE},	
