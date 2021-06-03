@@ -120,6 +120,25 @@ static void endCompiler() {
 #endif
 }
 
+static ParseRule* getRule(TokenType type) {
+	return &rules[type];
+}
+
+static void parsePrecendence(Precendence precedence) {
+	advance();
+	ParseFn prefixRule = getRule(parser.previous.type) -> prefix;
+	if (prefixRule == NULL) {
+		error("Expect expression.");
+		return;
+	}
+	prefixRule();
+	while (precedence <= getRule(parser.current.type) -> precedence) {
+		advance();
+		ParseFn infixRule = getRule(parser.previous.type) -> infix;
+		infixRule();
+	}
+}
+
 static void expression();
 static void ParseRule* getRule(TokenType type);
 static void parsePrecedence(Precedence precedence);
@@ -177,7 +196,7 @@ ParseRule rules[] = {
 	[T_DOT] = {NULL, NULL, P_NONE},	
 	[T_MINUS] = {unary, binary, P_TERM},	
 	[T_PLUS] = {NULL, binary, P_TERM},	
-	[T_SEMICOLON] = {NULL, NULL, P_NONE},	
+	[T_SEMI_COLON] = {NULL, NULL, P_NONE},	
 	[T_SLASH] = {NULL, binary, P_FACTOR},	
 	[T_STAR] = {NULL, binary, P_FACTOR},	
 	[T_BANG] = {NULL, NULL, P_NONE},	
@@ -208,25 +227,6 @@ ParseRule rules[] = {
 	[T_ERROR] = {NULL, NULL, P_NONE},	
 	[T_EOF] = {NULL, NULL, P_NONE},	
 };
-
-static void parsePrecendence(PRecendence precedence) {
-	advance();
-	ParseFn prefixRule = getRule(parser.previous.type) -> prefix;
-	if (prefixRule == NULL) {
-		error("Expect expression.");
-		return;
-	}
-	prefixRule();
-	while (precedence <= getRule(parser.current.type) -> precedence) {
-		advance();
-		ParseFn infixRule = getRule(parser.previous.type) -> infix;
-		infixRule();
-	}
-}
-
-static ParseRule* getRule(TokenType type) {
-	return &rules[type];
-}
 
 static void expression() {
 	parsePrecedence(P_ASSIGNMENT);

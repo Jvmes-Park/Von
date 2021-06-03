@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include "common.h"
-#include "vm.h"
 #include "debug.h"
 #include "../compiler/compiler.h"
+#include "vm.h"
 
 VM vm;
 
@@ -84,7 +84,7 @@ static InterpretResult run() {
 InterpretResult interpret(const char* source) {
 	Chunk chunk;
 	initChunk(&chunk);
-	if (!compiler(source, &chunk)) {
+	if (!compile(source, &chunk)) {
 		freeChunk(&chunk);
 		return INTERPRET_COMPILE_ERROR;
 	}
