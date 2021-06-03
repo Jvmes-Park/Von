@@ -160,6 +160,24 @@ static void binary() {
 		case T_SLASH:
 			emitByte(OP_DIVIDE);
 			break;
+		case T_BANG_EQUAL:
+			emitBytes(OP_EQUAL, OP_NOT);
+			break;
+		case T_EQUAL_EQUAL:
+			emitByte(OP_EQUAL);
+			break;
+		case T_GREATER:
+			emitByte(OP_GREATER);
+			break;
+		case T_GREATER_EQUAL:
+			emitBytes(OP_LESS, OP_NOT);
+			break;
+		case T_LESS:
+			emitByte(OP_LESS);
+			break;
+		case T_LESS_EQUAL:
+			emitBytes(OP_GREATER, OP_NOT);
+			break;	
 		default:
 			return;
 	}
@@ -217,12 +235,14 @@ ParseRule rules[] = {
 	[T_SEMI_COLON] = {NULL, NULL, P_NONE},	
 	[T_SLASH] = {NULL, binary, P_FACTOR},	
 	[T_STAR] = {NULL, binary, P_FACTOR},	
+	[T_EQUAL] = {NULL, NULL, P_NONE},
+	[T_EQUAL_EQUAL] = {NULL, binary, P_EQUALITY},
 	[T_BANG] = {unary, NULL, P_NONE},	
-	[T_BANG_EQUAL] = {NULL, NULL, P_NONE},	
-	[T_LESS] = {NULL, NULL, P_NONE},	
-	[T_LESS_EQUAL] = {NULL, NULL, P_NONE},	
-	[T_GREATER] = {NULL, NULL, P_NONE},	
-	[T_GREATER_EQUAL] = {NULL, NULL, P_NONE},	
+	[T_BANG_EQUAL] = {NULL, binary, P_EQUALITY},	
+	[T_LESS] = {NULL, binary, P_COMPARISON},	
+	[T_LESS_EQUAL] = {NULL, binary, P_COMPARISON},	
+	[T_GREATER] = {NULL, binary, P_COMPARISON},	
+	[T_GREATER_EQUAL] = {NULL, binary, P_COMPARISON},	
 	[T_IDENTIFIER] = {NULL, NULL, P_NONE},	
 	[T_STRING] = {NULL, NULL, P_NONE},	
 	[T_NUMBER] = {number, NULL, P_NONE},	
