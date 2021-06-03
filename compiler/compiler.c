@@ -197,6 +197,9 @@ static void unary() {
 		case T_MINUS: 
 			emitByte(OP_NEGATE);
 			break;
+		case T_BANG:
+			emitByte(OP_NOT);
+			break;
 		default:
 			return;
 	}
@@ -214,7 +217,7 @@ ParseRule rules[] = {
 	[T_SEMI_COLON] = {NULL, NULL, P_NONE},	
 	[T_SLASH] = {NULL, binary, P_FACTOR},	
 	[T_STAR] = {NULL, binary, P_FACTOR},	
-	[T_BANG] = {NULL, NULL, P_NONE},	
+	[T_BANG] = {unary, NULL, P_NONE},	
 	[T_BANG_EQUAL] = {NULL, NULL, P_NONE},	
 	[T_LESS] = {NULL, NULL, P_NONE},	
 	[T_LESS_EQUAL] = {NULL, NULL, P_NONE},	

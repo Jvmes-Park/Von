@@ -45,6 +45,10 @@ static Value peek(int distance) {
 	return vm.stackTop[-1 - distance];
 }
 
+static bool isFalsey(Value value) {
+	return IS_NIL(value) || (IS_BOOL(value) && !AS_BOOL(value));
+}
+
 static InterpretResult run() {
 #define READ_BYTE() (*vm.ip++)
 #define READ_CONSTANT() (vm.chunk -> constants.values[READ_BYTE()])
@@ -108,6 +112,9 @@ static InterpretResult run() {
 					break;
 			case OP_FALSE:
 					push(BOOL_VAL(false));
+					break;
+			case OP_NOT:
+					push(BOOL_VAL(isFalsey(pop())));
 					break;
 		}
 	}
