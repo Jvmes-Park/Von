@@ -208,6 +208,10 @@ static void number() {
 	emitConstant(NUMBER_VAL(value));
 }
 
+static void string() {
+	emitConstant(OBJ_VAL(copyString(parser.previous.start + 1, parser.previous.length - 2)));
+}
+
 static void unary() {
 	TokenType operatorType = parser.previous.type;
 	parsePrecedence(P_UNARY);
@@ -244,7 +248,7 @@ ParseRule rules[] = {
 	[T_GREATER] = {NULL, binary, P_COMPARISON},	
 	[T_GREATER_EQUAL] = {NULL, binary, P_COMPARISON},	
 	[T_IDENTIFIER] = {NULL, NULL, P_NONE},	
-	[T_STRING] = {NULL, NULL, P_NONE},	
+	[T_STRING] = {string, NULL, P_NONE},	
 	[T_NUMBER] = {number, NULL, P_NONE},	
 	[T_AND] = {NULL, NULL, P_NONE},	
 	[T_CLASS] = {NULL, NULL, P_NONE},	
