@@ -287,6 +287,12 @@ static void expression() {
 	parsePrecedence(P_ASSIGNMENT);
 }
 
+static void expressionStatement() {
+	expression();
+	consume(T_SEMI_COLON, "Expect ';' after expression.");
+	emitByte(OP_POP);
+}
+
 static void printStatement() {
 	expression();
 	consume(T_SEMI_COLON, "Expect ';' after value.");
@@ -300,6 +306,9 @@ static void declaration() {
 static void statement() {
 	if (match(T_PRINT)) {
 		printStatement();
+	}
+	else {
+		expressionStatement();
 	}
 }
 
