@@ -238,6 +238,15 @@ static void string() {
 	emitConstant(OBJ_VAL(copyString(parser.previous.start + 1, parser.previous.length - 2)));
 }
 
+static void namedVariable(Token name) {
+	uint8_t arg = identifierConstant(&name);
+	emitBytes(OP_GET_GLOBAL, arg);
+}
+
+static void variable() {
+	namedVariable(parser.previous);
+}
+
 static void unary() {
 	TokenType operatorType = parser.previous.type;
 	parsePrecedence(P_UNARY);
@@ -273,7 +282,7 @@ ParseRule rules[] = {
 	[T_LESS_EQUAL] = {NULL, binary, P_COMPARISON},	
 	[T_GREATER] = {NULL, binary, P_COMPARISON},	
 	[T_GREATER_EQUAL] = {NULL, binary, P_COMPARISON},	
-	[T_IDENTIFIER] = {NULL, NULL, P_NONE},	
+	[T_IDENTIFIER] = {variable, NULL, P_NONE},	
 	[T_STRING] = {string, NULL, P_NONE},	
 	[T_NUMBER] = {number, NULL, P_NONE},	
 	[T_AND] = {NULL, NULL, P_NONE},	
