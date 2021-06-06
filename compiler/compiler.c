@@ -85,6 +85,17 @@ static void consume(TokenType type, const char* message) {
 	errorAtCurrent(message);
 }
 
+static bool match(TokenType type) {
+	if (!check(type))
+		return false;
+	advance();
+	return true;
+}
+
+static bool check(TokenType type) {
+	return parser.current.type == type;
+}
+
 static void emitByte(uint8_t byte) {
 	writeChunk(currentChunk(), byte, parser.previous.line);
 }
@@ -140,6 +151,8 @@ static void parsePrecendence(Precendence precedence) {
 }
 
 static void expression();
+static void statement();
+static void declaration();
 static void ParseRule* getRule(TokenType type);
 static void parsePrecedence(Precedence precedence);
 
@@ -274,14 +287,31 @@ static void expression() {
 	parsePrecedence(P_ASSIGNMENT);
 }
 
+static void printStatement() {
+	expression();
+	consume(T_SEMI_COLON, "Expect ';' after value.");
+	emitByte(OP_PRINT);
+}
+
+static void declaration() {
+	statement();
+}
+
+static void statement() {
+	if (match(T_PRINT)) {
+		printStatement();
+	}
+}
+
 void compile(const char* source) {
 	initScanner(source);
 	compilingChunk = chunk;
 	parser.hadError = false;
 	parser.panicMode = false;
 	advance();
-	expression();
-	consume(T_EOF, "Expected end of expression.");
+	while (!match(T_EOF)) {
+		declaration();
+	}
 	endCompiler();
 	return !parser.hadError;
 }
