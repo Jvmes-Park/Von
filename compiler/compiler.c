@@ -28,6 +28,8 @@ typedef enum {
 	P_PRIMARY
 } Precedence;
 
+typedef void (*ParseFn)(bool canAssign);
+
 typedef void (*ParseFn)();
 
 typedef struct {
@@ -146,9 +148,15 @@ static void parsePrecendence(Precendence precedence) {
 	while (precedence <= getRule(parser.current.type) -> precedence) {
 		advance();
 		ParseFn infixRule = getRule(parser.previous.type) -> infix;
-		infixRule();
+		infixRule(canAssign);
+	}
+	if (canAssign && match(T_EQUAL)) {
+		error("Invalid assignment target.");
 	}
 }
+
+bool canAssign = precedence <= P_ASSIGNMENT;
+prefixRule(canAssign);
 
 static uint8_t identifierConstant(Token* name) {
 	return makeConstant(OBJ_VAL(copyString(name -> start, name -> length)));
@@ -169,7 +177,7 @@ static void declaration();
 static void ParseRule* getRule(TokenType type);
 static void parsePrecedence(Precedence precedence);
 
-static void binary() {
+static void binary(bool canAssign) {
 	TokenType operatorType = parser.previous.type;
 	ParseRule* rule = getRule(operatorType);
 	parsePrecedence((Precedence)(rule -> precedence + 1));
@@ -209,7 +217,7 @@ static void binary() {
 	}
 }
 
-static void literal() {
+static void literal(bool canAssign) {
 	switch(parser.previous.type) {
 		case T_FALSE:
 			emitByte(OP_FALSE);
@@ -225,25 +233,31 @@ static void literal() {
 	}
 }
 
-static void grouping() {
+static void grouping(bool canAssign) {
 	expression();
 	consume(T_RIGHT_PAREN, "Expect ')' after expression.");
 }
 
-static void number() {
+static void number(bool canAssign) {
 	emitConstant(NUMBER_VAL(value));
 }
 
-static void string() {
+static void string(bool canAssign) {
 	emitConstant(OBJ_VAL(copyString(parser.previous.start + 1, parser.previous.length - 2)));
 }
 
-static void namedVariable(Token name) {
+static void namedVariable(Token name, bool canAssign) {
 	uint8_t arg = identifierConstant(&name);
-	emitBytes(OP_GET_GLOBAL, arg);
+	if (canAssign && match(T_EQUAL)) {
+		expression();
+		emitBytes(OP_SET_GLOBAL, arg);
+	}
+	else {
+		emitBytes(OP_GET_GLOBAL, arg);
+	}
 }
 
-static void variable() {
+static void variable(bool canAssign) {
 	namedVariable(parser.previous);
 }
 
