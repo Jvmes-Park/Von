@@ -276,6 +276,24 @@ static void defineVariable(uint8_t global) {
 	emitBytes(OP_DEFINE_GLOBAL, global);
 }
 
+static void and_operator(bool canAssign) {
+	int endJump = emitJump(OP_JUMP_IF_FALSE);
+	emitByte(OP_POP);
+	parserPrecedence(P_AND);
+	patchJump(endJump);
+}
+
+static void or_operator(bool canAssign) {
+	int elseJump = emitJump(OP_JUMP_IF_FALSE);
+	int endJump = emitJump(OP_JUMP);
+
+	patchJump(elseJump);
+	emitByte(OP_POP);
+
+	parsePrecedence(P_OR);
+	patchJump(endJump);
+}
+
 static void expression();
 static void statement();
 static void declaration();
@@ -414,7 +432,7 @@ ParseRule rules[] = {
 	[T_IDENTIFIER] = {variable, NULL, P_NONE},	
 	[T_STRING] = {string, NULL, P_NONE},	
 	[T_NUMBER] = {number, NULL, P_NONE},	
-	[T_AND] = {NULL, NULL, P_NONE},	
+	[T_AND] = {NULL, and_operator, P_NONE},	
 	[T_CLASS] = {NULL, NULL, P_NONE},	
 	[T_ELSE] = {NULL, NULL, P_NONE},	
 	[T_FALSE] = {literal, NULL, P_NONE},	
@@ -422,7 +440,7 @@ ParseRule rules[] = {
 	[T_FUN] = {NULL, NULL, P_NONE},	
 	[T_IF] = {NULL, NULL, P_NONE},	
 	[T_NIL] = {literal, NULL, P_NONE},	
-	[T_OR] = {NULL, NULL, P_NONE},	
+	[T_OR] = {NULL, or_operator, P_NONE},	
 	[T_PRINT] = {NULL, NULL, P_NONE},	
 	[T_RETURN] = {NULL, NULL, P_NONE},	
 	[T_SUPER] = {NULL, NULL, P_NONE},	
