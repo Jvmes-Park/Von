@@ -126,6 +126,13 @@ static void emitReturn() {
 	emitByte(OP_RETURN);
 }
 
+static int emitJump(uint8_t instruction) {
+	emitByte(instruction);
+	emitByte(0xff);
+	emitByte(0xff);
+	return currentChunk() -> count - 2;
+}
+
 static uin8_t makeConstant(Value value) {
 	int constant = addConstant(currentChunk(), value);
 	if (constant > UINT_MAX) {
@@ -137,6 +144,15 @@ static uin8_t makeConstant(Value value) {
 
 static void emitConstant(Value value) {
 	emitBytes(OP_CONSTANT, makeConstant(value));
+}
+
+static void patchJump(int offset) {
+	int jump = currentChunk() -> count - offset - 2;
+	if (jump > UINT16_MAX) {
+		error("Too much code to jump over.");
+	}
+	currentChunk() -> code[offset] = (jump >> 8) & 0xff;
+	currentChunk() -> code[offset + 1] = ump & 0xff;
 }
 
 static void initCompiler(Compiler* compiler) {
@@ -447,6 +463,17 @@ static void expressionStatement() {
 	emitByte(OP_POP);
 }
 
+static void ifStatement() {
+	consume(T_LEFT_PAREN, "Expect '(' after 'if'.");
+	expression();
+	consume(T_RIGHT_PAREN, "Expect ')' after condition.");
+
+	int thenJump = emitJump(OP_JUMP_IF_FALSE);
+	statement();
+
+	patchJump(thenJump);
+}
+
 static void printStatement() {
 	expression();
 	consume(T_SEMI_COLON, "Expect ';' after value.");
@@ -489,6 +516,9 @@ static void declaration() {
 static void statement() {
 	if (match(T_PRINT)) {
 		printStatement();
+	}
+	else if (match(T_IF)) {
+		ifStatement();
 	}
 	else if (match(T_LEFT_BRACE)) {
 		beginScope();
