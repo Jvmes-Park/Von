@@ -460,6 +460,9 @@ ParseRule rules[] = {
 	[T_WHILE] = {NULL, NULL, P_NONE},	
 	[T_ERROR] = {NULL, NULL, P_NONE},	
 	[T_EOF] = {NULL, NULL, P_NONE},	
+	[T_SWITCH] = {NULL, NULL, P_NONE};
+	[T_CASE] = {NULL, NULL, P_NONE};
+	[T_DEFAULT] = {NULL, NULL, P_NONE};
 };
 
 static void expression() {
@@ -535,6 +538,26 @@ static void forStatement() {
 	}
 	
 	endScope();	
+}
+
+static void switchStatement() {
+	consume(T_LEFT_PAREN, "Expect '(' after 'switch'.");
+	expression();
+	consume(T_RIGHT_PAREN, "Expect ')' after condition.");
+
+	consume(T_LEFT_BRACE, "Expect '{'.");
+	if (!match(T_RIGHT_BRACE)) {
+		if (match(T_CASE)) {
+			expression();
+			consume(T_COLON, "Expect ':' after expression.");
+			statement();
+		}
+		else if (match(T_DEFAULT_CASE)) {
+			statement();
+		}
+		else 
+			consume(T_RIGHT_BRACE, "Expect '}.");
+	}
 }
 
 static void ifStatement() {
@@ -620,6 +643,9 @@ static void statement() {
 	}
 	else if (match(T_WHILE)) {
 		whileStatement();
+	}
+	else if (match(T_SWITCH)) {
+		switchStatement(); //To be completed
 	}
 	else if (match(T_LEFT_BRACE)) {
 		beginScope();
