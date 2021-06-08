@@ -491,6 +491,52 @@ static void expressionStatement() {
 	emitByte(OP_POP);
 }
 
+static void forStatement() {
+	beginScope();
+	consume(T_LEFT_PAREN, "Expect '(' after 'for'.");
+	if (match(T_SEMI_COLON)) {
+		
+	}
+	else if (match(T_VAR)) {
+		varDeclaration();
+	}	
+	else {
+		expressionStatement();
+	}
+	int loopStart = currentChunk() -> count;
+	int exitJump = -1;
+
+	if (!match(T_SEMI_COLON)) {
+		expression();
+		consume(T_SEMI_COLON, "Expect ';' after loop condition.");
+		exitJump = emitJump(OP_JUMP_IF_FALSE);
+		emitByte(OP_POP);
+	}
+
+	if (!match(T_RIGHT_PAREN)) {
+		int bodyJump = emitJump(OP_JUMP);
+		int incrementStart = currentChunk() -> count;
+		expression();
+		emitByte(OP_POP);
+		consume(T_RIGHT_PAREN, "Expect ')' after for clauses.");
+
+		emitLoop(loopStart);
+		loopStart = incrementStart;
+		patchJump(bodyJump);
+	}
+	
+	statement();
+	
+	emitLoop(loopStart);
+	
+	if (exitJump != -1) {
+		patchJump(exitJump);
+		emitByte(OP_POP);
+	}
+	
+	endScope();	
+}
+
 static void ifStatement() {
 	consume(T_LEFT_PAREN, "Expect '(' after 'if'.");
 	expression();
@@ -565,6 +611,9 @@ static void declaration() {
 static void statement() {
 	if (match(T_PRINT)) {
 		printStatement();
+	}
+	else if (match(T_FOR)) {
+		forStatement();
 	}
 	else if (match(T_IF)) {
 		ifStatement();
