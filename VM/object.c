@@ -27,6 +27,14 @@ static ObjString* allocateString(char* chars, int length, uint32_t hash) {
 	return string;
 }
 
+ObjFunction* newFunction() {
+	ObjFunction* function = ALLOCATE_OBJ(ObjFunction, OBJ_FUNCTION);
+	function -> arity = 0;
+	function -> name = NULL;
+	initChunk(&function -> chunk);
+	return function;
+}
+
 static uint32_t hashString(const char* key, int length) {
 	uint32_t hash = 2166136261u;
 	for (int i = 0; i < length; i++) {
@@ -45,6 +53,10 @@ ObjString* copyString(const char* chars, int length) {
 	memcpy(heapChars, chars, length);
 	heapChars[length] = '\0';
 	return allocateString(heapChars, length, hash);
+}
+
+static void printFunction(ObjFunction* function) {
+	printf("<fn %s>", function -> name -> chars);
 }
 
 void printObject(Value value) {

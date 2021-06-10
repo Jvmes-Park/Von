@@ -1,0 +1,14 @@
+Documentation:
+-How to use Von
+
+-Purpose of Von
+	-Who am I and why did I create this?
+
+-Documentation
+
+-Resources to make your own language
+	-Crafting intepretetrs
+	-Github 
+	-EDX stanford compilers
+	-Engineering a compiler
+
