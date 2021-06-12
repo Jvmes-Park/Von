@@ -8,12 +8,9 @@
 #include "debug.h"
 #include "../compiler/compiler.h"
 #include "vm.h"
+#include "../libaries/native_library"
 
 VM vm;
-
-static Value clockNative(int argCount, Value* args) {
-	return NUMBER_VAL((double)clock() / CLOCKS_PER_SEC);
-}
 
 static void resetStack() {
 	vm.stackTop = vm.stack;
