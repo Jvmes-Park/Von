@@ -142,6 +142,7 @@ static void emitLoop(int loopStart) {
 
 static void emitReturn() {
 	emitByte(OP_RETURN);
+	emitByte(OP_NIL);
 }
 
 static int emitJump(uint8_t instruction) {
