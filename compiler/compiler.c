@@ -312,6 +312,21 @@ static void defineVariable(uint8_t global) {
 	emitBytes(OP_DEFINE_GLOBAL, global);
 }
 
+static uint8_t argumentList() {
+	uint8_t argCount = 0;
+	if (!check(T_RIGHT_PAREN)) {
+		do {
+			expression();
+			if (argCount == 255) {
+				error("Can't have more than 255 arguments.");
+			}
+			argCount++;
+		} while (match(T_COMMA));
+	}
+	consume(T_RIGHT_PAREN, "Expect ')' after arguments.");
+	return argCount;
+}
+
 static void and_operator(bool canAssign) {
 	int endJump = emitJump(OP_JUMP_IF_FALSE);
 	emitByte(OP_POP);
@@ -374,6 +389,11 @@ static void binary(bool canAssign) {
 		default:
 			return;
 	}
+}
+
+static void call(bool canAssign) {
+	uint8_t argCount = argumentList();
+	emitBytes(OP_CALL, argCount);
 }
 
 static void literal(bool canAssign) {
@@ -446,7 +466,7 @@ static void unary() {
 }
 
 ParseRule rules[] = {
-	[T_LEFT_PAREN] = {grouping, NULL, P_NONE},
+	[T_LEFT_PAREN] = {grouping, call, P_NONE},
 	[T_RIGHT_PAREN] = {NULL, NULL, P_NONE},
 	[T_LEFT_BRACE] = {NULL, NULL, P_NONE},
 	[T_RIGHT_BRACE] = {NULL, NULL, P_NONE},	
