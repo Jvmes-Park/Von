@@ -661,6 +661,17 @@ static void printStatement() {
 	emitByte(OP_PRINT);
 }
 
+static void returnStatement() {
+	if (match(T_SEMI_COLON)) {
+		emitReturn();
+	}
+	else {
+		expression();
+		consume(T_SEMI_COLON, "Expect ';' after return value.");
+		emitByte(OP_RETURN);
+	}
+}
+	
 static void whileStatement() {
 	int loopStart = currentChunk() -> count;
 	consume(T_LEFT_PAREN, "Expect '(' after 'while'.");
@@ -721,6 +732,9 @@ static void statement() {
 	}
 	else if (match(T_IF)) {
 		ifStatement();
+	}
+	else if (match(T_RETURN)) {
+		returnStatement();
 	}
 	else if (match(T_WHILE)) {
 		whileStatement();
