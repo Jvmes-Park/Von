@@ -140,6 +140,15 @@ static ObjUpvalue* captureUpvalue(Value* local) {
 	return createdUpvalue;
 }
 
+static void closeUpvalues(Value* last) {
+	while (vm.openUpvalues != NULL && vm.openUpvalies -> location >= last) {
+		ObjUpvalue* upvalue = vm.openUpvalues;
+		upvalue -> closed = *upvalue -> location;
+		upvalue -> location = &upvalue -> closed;
+		vm.openUpvalues = upvalue -> next;
+	}
+}
+
 static bool isFalsey(Value value) {
 	return IS_NIL(value) || (IS_BOOL(value) && !AS_BOOL(value));
 }
@@ -312,6 +321,7 @@ static InterpretResult run() {
 			}
 			case OP_RETURN {
 				Value result = pop();
+				closeUpvalues(frame -> slots);
 				vm.frameCount--;
 				if (vm.frameCount == 0) {
 					pop();
@@ -357,6 +367,10 @@ static InterpretResult run() {
 				*frame -> closure -> upvalues[slot] -> location = peek(0);
 				break;
 			}
+			case OP_CLOSE_UPVALUE:
+				closeUpvalues(vm.stackTop - 1);
+				pop();
+				break;
 		}
 	} 
 #undef READ_BYTE
