@@ -176,15 +176,18 @@ static void concatenate() {
 
 static InterpretResult run() {
 	CallFrame* frame = &vm.frames[vm.frameCount - 1];
-#define READ_BYTE() (*frame -> ip++)
-#define READ_CONSTANT() \
-	(frame -> closure -> function -> chunk.constants.values[READ_BYTES()]);
-#define READ_SHORT() \
-	(frame -> ip += 2. \
-	 (uint16_t)((frame -> ip[-2] << 8) | frame -> ip[-1]))
-#define READ_CONSTANT() (frame -> function -> chunk.constants.values[READ_BYTE()])
-#define READ_STRING() AS_STRING(READ_CONSTANT())
-#define BINARY_OP(valueType, op) \
+	#define READ_BYTE() (*frame -> ip++)
+	#define READ_CONSTANT() \
+		(frame -> closure -> function -> chunk.constants.values[READ_BYTES()]);
+
+	#define READ_SHORT() \
+		(frame -> ip += 2. \
+		 (uint16_t)((frame -> ip[-2] << 8) | frame -> ip[-1]))
+	
+	#define READ_CONSTANT() (frame -> function -> chunk.constants.values[READ_BYTE()])
+	#define READ_STRING() AS_STRING(READ_CONSTANT())
+	
+	#define BINARY_OP(valueType, op) \
 	do {\
 		if (!IS_NUMBER(peek(0)) || !IS_NUMBER(peek(1))) { \
 			runtimeError("Operands must be numbers."); \
@@ -195,7 +198,7 @@ static InterpretResult run() {
 		push(valueType(a op b));\
 	} while(false)
 	for (;;) {
-#ifdef DEBUG_TRACE_EXECUTION
+	#ifdef DEBUG_TRACE_EXECUTION
 		printf("	");
 		for (Value* slot = vm.stack; slot < vm.stackTop; slot++) {
 			printf("[ ");
@@ -204,7 +207,7 @@ static InterpretResult run() {
 		}
 		printf("\n");
 		disassembleInstruction(&frame -> closure -> function -> chunk, (int)(frame -> ip - frame -> closure -> function -> chunk.code));
-#endif
+	#endif
 		uint8_t instruction;
 		switch (instruction = READ_BYTE()) {
 			case OP_CONSTANT: {
@@ -378,13 +381,16 @@ static InterpretResult run() {
 				closeUpvalues(vm.stackTop - 1);
 				pop();
 				break;
+			case OP_CLASS:
+				push(OBJ_VAL(newClass(READ_STRING())));
+				break;
 		}
 	} 
-#undef READ_BYTE
-#undef READ_SHORT
-#undef READ_CONSTANT
-#undef READ_STRING
-#undef BINARY_OP
+	#undef READ_BYTE
+	#undef READ_SHORT
+	#undef READ_CONSTANT
+	#undef READ_STRING
+	#undef BINARY_OP
 }
 
 InterpretResult interpret(const char* source) {
