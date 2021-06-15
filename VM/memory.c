@@ -3,6 +3,11 @@
 #include "vm.h"
 //Function to move new array to the new doubled array.
 void* reallocate(void* pointer, size_t oldSize, size_t newSize) {
+	if (newSize > oldSize) {
+		#ifdef DEBUG_STRESS_GC
+		collectGarbage();
+		#endif
+	}
 	if (newSize == 0) {
 		free(pointer);
 		return NULL;
@@ -40,6 +45,10 @@ static void freeObject(Obj* object) {
 			FREE(ObjUpvalue, object);
 			break;
 	}
+}
+
+void collectGarbage() {
+
 }
 
 void freeObjects() {
