@@ -23,6 +23,9 @@ typedef struct {
 	Obj* object;
 	Table strings;
 	Table globals;
+	int grayCount;
+	int grayCapacity;
+	Obj** grayStack;
 } VM;
 
 typedef enum {
