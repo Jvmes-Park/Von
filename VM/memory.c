@@ -1,6 +1,11 @@
 #include <stdlib.h>
 #include "memory.h"
 #include "vm.h"
+
+#ifdef DEBUG_LOG_GC
+#include <stdio.h>
+#include "debug.h"
+#endif
 //Function to move new array to the new doubled array.
 void* reallocate(void* pointer, size_t oldSize, size_t newSize) {
 	if (newSize > oldSize) {
@@ -48,10 +53,20 @@ static void freeObject(Obj* object) {
 }
 
 void collectGarbage() {
+	#ifdef DEBUG_LOG_GC
+	printf("-- gc begin\n");
+	#endif
 
+	#ifdef DEBUG_LOG_GC
+	printf("-- gc end\n");
+	#endif
 }
 
 void freeObjects() {
+	#ifdef DEBUG_LOG_GC
+	printf("%p free type %d\n", (void*)object, object -> type);
+	#endif
+
 	Obj* object = vm.objects;
 	while (object != NULL) {
 		Obj* next = object -> next;
