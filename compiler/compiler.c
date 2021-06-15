@@ -448,6 +448,19 @@ static void call(bool canAssign) {
 	emitBytes(OP_CALL, argCount);
 }
 
+static void dot(bool canAssign) {
+	consume(T_IDENTIFER, "Expect property name after '.'.");
+	uint8_t name = identifierConstant(&parser.previous);
+
+	if (canAssign && match(T_EQUAL)) {
+		expression();
+		emitBytes(OP_SET_PROPERTY, name);
+	}
+	else {
+		emitBytes(OP_GET_PROPERT, name);
+	}
+}
+
 static void literal(bool canAssign) {
 	switch(parser.previous.type) {
 		case T_FALSE:
@@ -527,7 +540,7 @@ ParseRule rules[] = {
 	[T_LEFT_BRACE] = {NULL, NULL, P_NONE},
 	[T_RIGHT_BRACE] = {NULL, NULL, P_NONE},	
 	[T_COMMA] = {NULL, NULL, P_NONE},	
-	[T_DOT] = {NULL, NULL, P_NONE},	
+	[T_DOT] = {NULL, dot, P_CALL},	
 	[T_MINUS] = {unary, binary, P_TERM},	
 	[T_PLUS] = {NULL, binary, P_TERM},	
 	[T_SEMI_COLON] = {NULL, NULL, P_NONE},	
