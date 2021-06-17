@@ -120,12 +120,28 @@ static bool callValue(Value callee, int argCount) {
 				vm.stackTop[-argCount - 1] = OBJ_VAL(newInstance(klass));
 				return true;
 			}
+			case OBJ_BOUND_METHOD: {
+				ObjBoundMethod* bound = AS_BOUND_METHOD(callee);
+				return call(bound -> method, argCount);
+			}
 			default:
 				break;
 		}
 	}
 	runtimeError("Can only call functions and classes.");
 	return false;
+}
+
+static bool bindMethod(ObjClass* klass, ObjString* name) {
+	Value method;
+	if (!tableGet(&klass -> methods, name, &method)) {
+		runtimeError("Undefined property '%s'.", name -> chars);
+		return false;
+	}
+	ObjBoundMethod* bound = newBoundMethod(peek(0), AS_CLOSURE(method));
+	pop();
+	push(OBJ_VAL(bound));
+	return true;
 }
 
 static ObjUpvalue* captureUpvalue(Value* local) {
@@ -410,8 +426,11 @@ static InterpretResult run() {
 					push(value);
 					break;
 				}
-				runtimeError("Undefined propert '%s'.", name -> chars);
-				return INTERPRET_RUNTIME_ERROR;
+
+				if (!bindMethod(instance -> klass, name)) {
+					return INTERPRET_RUNTIME_ERROR;
+				}
+				break;
 			}
 			case OP_SET_PROPERTY: {
 				if (!IS_INSTANCE(peek(1))) {
