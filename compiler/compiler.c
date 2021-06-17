@@ -54,6 +54,7 @@ typedef struct {
 
 typedef enum {
 	TYPE_FUNCTION,
+	TYPE_METHOD,
 	TYPE_SCRIPT
 } FunctionType;
 
@@ -67,10 +68,15 @@ typedef struct Compiler {
 	int scopeDepth;
 };
 
+typedef struct ClassCompiler {
+	struct ClassCompiler* enclosing;
+} ClassCompiler;
+
 Parser parser;
 Compiler* current = NULL;
 initCompiler(&compiler, TYPE_SCRIPT);
 Chunk* compilingChunk;
+ClassCompiler* currentClass = NULL;
 
 static Chunk* currentChunk() {
 	return &current -> function -> chunk;
@@ -198,8 +204,14 @@ static void initCompiler(Compiler* compiler, FunctionType type) {
 	Local* local = &current -> locals[current -> localCount++];
 	local -> depth = 0;
 	local -> isCaptured = false;
-	local -> name.start = "";
-	local -> name.length = 0;
+	if (type != TYPE_FUNCTION) {
+		local -> name.start = "this";
+		local -> name.length = 4;
+	}
+	else {
+		local -> name.start = "";
+		local -> name.start = 0;
+	}
 }
 
 static ObjFunction* endCompiler() {
@@ -519,6 +531,14 @@ static void variable(bool canAssign) {
 	namedVariable(parser.previous);
 }
 
+static void this_variable(bool canAssign) {
+	if (currentClass == NULL) {
+		error("Can't use 'this' outside of a class.");
+		return;
+	}
+	variable(false);
+}
+
 static void unary() {
 	TokenType operatorType = parser.previous.type;
 	parsePrecedence(P_UNARY);
@@ -569,7 +589,7 @@ ParseRule rules[] = {
 	[T_PRINT] = {NULL, NULL, P_NONE},	
 	[T_RETURN] = {NULL, NULL, P_NONE},	
 	[T_SUPER] = {NULL, NULL, P_NONE},	
-	[T_THIS] = {NULL, NULL, P_NONE},	
+	[T_THIS] = {this_variable, NULL, P_NONE},	
 	[T_TRUE] = {NULL, NULL, P_NONE},	
 	[T_VAR] = {NULL, NULL, P_NONE},	
 	[T_WHILE] = {NULL, NULL, P_NONE},	
@@ -623,7 +643,7 @@ static void function(FunctionType type) {
 static void method() {
 	consume(T_IDENTIFIER, "Expect method name.");
 	uint8_t constant = identifierConstant(&parser.previous);
-	FunctionType type = TYPE_FUNCTION;
+	FunctionType type = TYPE_METHOD;
 	function(type);
 	emitBytes(OP_METHOD, constant);
 }
@@ -637,6 +657,10 @@ static void classDeclaration() {
 	emitBytes(OP_CLASS, nameConstant);
 	defineVariable(nameConstant);
 
+	ClassCompiler classCompiler;
+	classCompiler.eclosing = currentClass;
+	currentClass = &classCompiler;
+
 	namedVariable(className, false);
 	consume(T_LEFT_BRACE, "Expect '{' before class body.");
 	while (!check(T_RIGHT_BRACE) && !check(T_EOF)) {
@@ -644,6 +668,7 @@ static void classDeclaration() {
 	}
 	consume(T_RIGHT_BRACE, "Expect '}' after class body.");
 	emitByte(OP_POP);
+	currentClass = currentClass -> enclosing;
 }
 
 static void funDeclaration() {
