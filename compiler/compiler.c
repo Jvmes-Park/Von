@@ -475,6 +475,11 @@ static void dot(bool canAssign) {
 		expression();
 		emitBytes(OP_SET_PROPERTY, name);
 	}
+	else if (match(T_LEFT_PAREN)) {
+		uint8_t argCOunt = argumentList();
+		emitBytes(OP_INVOKE, name);
+		emitByte(argCount);
+	}
 	else {
 		emitBytes(OP_GET_PROPERT, name);
 	}
