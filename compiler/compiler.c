@@ -676,6 +676,16 @@ static void classDeclaration() {
 	classCompiler.eclosing = currentClass;
 	currentClass = &classCompiler;
 
+	if (match(T_LESS)) {
+		consume(T_IDENTIFIER, "Expect superclass name.");
+		variable(false);
+		if (identifierEqual(&className, &parser.previous)) {
+			error("A class can't inherit from itself.");
+		}
+		namedVariable(className, false);
+		emitByte(OP_INHERIT);
+	}
+
 	namedVariable(className, false);
 	consume(T_LEFT_BRACE, "Expect '{' before class body.");
 	while (!check(T_RIGHT_BRACE) && !check(T_EOF)) {
