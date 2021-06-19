@@ -551,6 +551,30 @@ static Token syntheticToken(const char* text) {
 	return token;
 }	
 
+static void super_keyword(bool canAssign) {
+	if (currentClass == NULL) {
+		error("Can't use 'super' outside of a class.");
+	}
+	else if (!currentClass -> hasSuperclass) {
+		error("Can't use 'super' in a class with no superclass.");
+	}
+	consume(T_DOT, "Expect '.' after 'super'.");
+	consume(T_IDENTIFIER, "Expect superclass method name.");
+	uint8_t name = identifierConstant(&parser.previous);
+
+	namedVariable(syntheticToken("this"), false);
+	if (match(T_LEFT_PAREN)) {
+		uint8_t argCount = argumentList();
+		namedVariable(syntehticToken("super"), false);
+		emitBytes(OP_SUPER_INVOKE, name);
+		emitByte(argCount);
+	}
+	else {
+		namedVariable(syntheticToken("super"), false);
+		emitBytes(OP_GET_SUPER, name);
+	}
+}
+
 static void this_variable(bool canAssign) {
 	if (currentClass == NULL) {
 		error("Can't use 'this' outside of a class.");
@@ -608,7 +632,7 @@ ParseRule rules[] = {
 	[T_OR] = {NULL, or_operator, P_NONE},	
 	[T_PRINT] = {NULL, NULL, P_NONE},	
 	[T_RETURN] = {NULL, NULL, P_NONE},	
-	[T_SUPER] = {NULL, NULL, P_NONE},	
+	[T_SUPER] = {super_keyword, NULL, P_NONE},	
 	[T_THIS] = {this_variable, NULL, P_NONE},	
 	[T_TRUE] = {NULL, NULL, P_NONE},	
 	[T_VAR] = {NULL, NULL, P_NONE},	
