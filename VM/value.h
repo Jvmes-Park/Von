@@ -9,8 +9,8 @@ typedef struct ObjString ObjString;
 
 #ifdef NAN_BOXING
 
-#define QNAN	((uint64_t)0x7ffc000000000000)
-#define TAG_NUL		1
+#define QNAN     ((uint64_t)0x7ffc000000000000)
+#define TAG_NIL		1
 #define TAG_FALSE	2
 #define TAG_TRUE 	3
 
@@ -25,7 +25,8 @@ typedef uint64_t Value;
 #define AS_BOOL(value)		((value) == TRUE_VAL)
 #define IS_BOOL(value)		(((value) | 1) == TRUE_VAL)
 
-#define SIGN_BIT		((uint64_t)0x8000000000000000)
+#define SIGN_BIT ((uint64_t)0x8000000000000000)
+
 #define OBJ_VAL(obj) \
 	(Value)(SIGN_BIT | QNAN | (uint64_t)(uintptr_t)(obj))
 #define AS_OBJ(value) \
@@ -83,7 +84,6 @@ typedef struct {
 
 #endif
 
-typedef double Value;
 
 typedef struct {
 	int capacity;

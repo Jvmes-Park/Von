@@ -26,7 +26,7 @@ static Obj* allocateObject(size_t size, ObjType type) {
 
 ObjBoundMethod* newBoundMethod(Value receiver, ObjClosure* method) {
 	ObjBoundMethod* bound = ALLOCATE_OBJ(ObjBoundMethod, OBJ_BOUND_METHOD);
-	bound -> reciever = reciever;
+	bound -> receiver = receiver;
 	bound -> method = method;
 	return bound;
 }
@@ -39,6 +39,10 @@ ObjClass* newClass(ObjString* name) {
 }
 
 ObjClosure* newClosure(ObjFunction* function) {
+	ObjUpvalue** upvalues = ALLOCATE(ObjUpvalue*, function -> upvalueCount);
+	for (int i = 0; i < function -> upvalueCount; i++) {
+		upvalues[i] = NULL;
+	}
 	ObjClosure* closure = ALLOCATE_OBJ(ObjClosure, OBJ_CLOSURE);
 	closure -> function = function;
 	closure -> upvalues = upvalues;

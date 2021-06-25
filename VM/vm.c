@@ -2,15 +2,19 @@
 #include <stdarg.h>
 #include <string.h>
 #include <time.h>
+
 #include "object.h"
 #include "memory.h"
 #include "common.h"
 #include "debug.h"
 #include "../compiler/compiler.h"
 #include "vm.h"
-#include "../libaries/native_library"
 
 VM vm;
+
+static Value clockNative(int argCount, Value* args) {
+	return NUMBER_VAL((double)clock() / CLOCKS_PER_SEC);
+}
 
 static void resetStack() {
 	vm.stackTop = vm.stack;
@@ -29,7 +33,7 @@ static void runtimeError (const char* format, ...) {
 		CallFrame* frame = &vm.frames[i];
 		ObjFunction* function = frame -> closure -> function;
 		size_t instruction = frame -> ip - function -> chunk.code - 1;
-		fprintf(stderr, "[line &d] in ". function -> chunk.lines[instruction]);
+		fprintf(stderr, "[line &d] in ", function -> chunk.lines[instruction]);
 		if (function -> name == NULL) {
 			fprintf(stderr, "script\n");
 		}
@@ -38,8 +42,8 @@ static void runtimeError (const char* format, ...) {
 		}
 	}
 
-	CallFram* frame = &vm.frames[vm.frameCount - 1];
-	size_t instruction = frame -> ip - frame -> function -> chunk.code - 1;
+	CallFrame* frame = &vm.frames[vm.frameCount - 1];
+	size_t instruction = frame -> ip - function -> chunk.code - 1;
 	int line = frame -> function -> chunk.lines[instruction];
 	fprintf(stderr, "[line %d] in script\n", line);
 	resetStack();
@@ -110,12 +114,13 @@ static bool call(ObjClosure* closure, int argCount) {
 static bool callValue(Value callee, int argCount) {
 	if (IS_OBJ(callee)) {
 		switch(OBJ_TYPE(callee)) {
-			case OBJ_FUNCTION:
+			case OBJ_NATIVE: {
 				NativeFn native = AS_NATIVE(callee);
 				Value result = native(argCount, vm.stackTop - argCount);
 				vm.stackTop -= argCount + 1;
 				push(result);
 				return true;
+			}
 			case OBJ_CLOSURE: 
 				return call(AS_CLOSURE(callee), argCount);
 			case OBJ_CLASS: {
@@ -155,7 +160,7 @@ static bool invokeFromClass(ObjClass* klass, ObjString* name, int argCount) {
 
 static bool invoke(ObjString* name, int argCount) {
 	Value receiver = peek(argCount);
-	if (!IS_INSTANCE(reciever)) {
+	if (!IS_INSTANCE(receiver)) {
 		runtimeError("Only instances have methods.");
 		return false;
 	}
@@ -183,7 +188,7 @@ static bool bindMethod(ObjClass* klass, ObjString* name) {
 static ObjUpvalue* captureUpvalue(Value* local) {
 	ObjUpvalue* prevUpvalue = NULL;
 	ObjUpvalue* upvalue = vm.openUpvalues;
-	while (upvalue != NULL && upvalue -> local > local) {
+	while (upvalue != NULL && upvalue -> location > local) {
 		prevUpvalue = upvalue;
 		upvalue = upvalue -> next;
 	}
@@ -203,7 +208,7 @@ static ObjUpvalue* captureUpvalue(Value* local) {
 }
 
 static void closeUpvalues(Value* last) {
-	while (vm.openUpvalues != NULL && vm.openUpvalies -> location >= last) {
+	while (vm.openUpvalues != NULL && vm.openUpvalues -> location >= last) {
 		ObjUpvalue* upvalue = vm.openUpvalues;
 		upvalue -> closed = *upvalue -> location;
 		upvalue -> location = &upvalue -> closed;
@@ -248,7 +253,6 @@ static InterpretResult run() {
 		(frame -> ip += 2. \
 		 (uint16_t)((frame -> ip[-2] << 8) | frame -> ip[-1]))
 	
-	#define READ_CONSTANT() (frame -> function -> chunk.constants.values[READ_BYTE()])
 	#define READ_STRING() AS_STRING(READ_CONSTANT())
 	
 	#define BINARY_OP(valueType, op) \
@@ -284,7 +288,7 @@ static InterpretResult run() {
 						runtimeError("Operand must be a number.");
 						return INTERPRET_RUNTIME_ERROR;
 					}
-					push(NUMBER_VAL(-AS_NUMBER(pop()));
+					push(NUMBER_VAL(-AS_NUMBER(pop())));
 					break;
 			case OP_ADD: {
 					if (IS_STRING(peek(0)) && IS_STRING(peek(1))) {
@@ -393,7 +397,7 @@ static InterpretResult run() {
 				frame -> ip -= offset;
 				break;
 			}
-			case OP_RETURN {
+			case OP_RETURN: {
 				Value result = pop();
 				closeUpvalues(frame -> slots);
 				vm.frameCount--;
@@ -406,7 +410,7 @@ static InterpretResult run() {
 				frame = &vm.frames[vm.frameCount - 1];
 				break;
 			}
-			case OP_CALL {
+			case OP_CALL: {
 				int argCount = READ_BYTE();
 				if (!callValue(peek(argCount), argCount)) {
 					return INTERPRET_RUNTIME_ERROR;
@@ -496,7 +500,7 @@ static InterpretResult run() {
 					return INTEPRET_RUNTIME_ERROR;
 				}
 				ObjClass* subclass = AS_CLASS(peek(0));
-				tableAddAll(&AS_CLASS(superclass) -> methods, &sublcass -> methods);
+				tableAddAll(&AS_CLASS(superclass) -> methods, &subclass -> methods);
 				pop();
 				break;
 			}

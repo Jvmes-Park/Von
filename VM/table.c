@@ -29,8 +29,9 @@ static Entry* findEntry(Entry* entries, int capacity, ObjString* key) {
 				return tombstone != NULL ? tombstone : entry;
 			}
 			else {
-				if (tombstone == NULL)
+				if (tombstone == NULL) {
 					tombstone = entry;
+				}
 			}
 			else if (entry -> key == key) {
 				return entry;
@@ -116,7 +117,7 @@ ObjString* tableFindString(Table* table, const char* chars, int length, uint32_t
 				return NULL;
 		}
 		else if (entry -> key -> length == length &&
-				entry -> key -> hash = hash &&
+				entry -> key -> hash == hash &&
 				memcmp(entry -> key -> chars, chars, length) == 0) {
 			return entry -> key;
 		}

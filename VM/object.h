@@ -98,7 +98,7 @@ typedef struct {
 	ObjClosure* method;
 } ObjBoundMethod;
 
-ObjBoundMethod* newBoundMethod(value reciever, ObjClosure* method);
+ObjBoundMethod* newBoundMethod(Value receiver, ObjClosure* method);
 ObjClass* newClass(ObjString* name);
 ObjClosure* newClosure(ObjFunction* function);
 ObjFunction* newFunction();

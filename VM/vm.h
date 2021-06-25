@@ -1,5 +1,5 @@
 #ifndef Von_vm_h
-#define Von_hm_h
+#define Von_vm_h
 #include "chunk.h"
 #include "value.h"
 #include "table.h"
@@ -21,7 +21,7 @@ typedef struct {
 	Value* stackTop;
 	ObjString* initString;
 	ObjUpvalue* openUpvalues;
-	Obj* object;
+	Obj* objects;
 	Table strings;
 	Table globals;
 	int grayCount;
@@ -37,7 +37,7 @@ typedef enum {
 	INTERPRET_RUNTIME_ERROR
 } InterpretResult;
 
-extern Vm vm;
+extern VM vm;
 
 void initVM();
 void freeVM();

@@ -3,11 +3,12 @@
 #include <string.h>	
 
 #include "../vm/common.h"
+#include "compiler.h"
 #include "scanner.h"
 #include "../vm/memory.h"
 
 #ifdef DEBUG_PRINT_CODE
-#include "../vm/debug.h"
+	#include "../vm/debug.h"
 #endif
 
 typedef struct {
