@@ -45,7 +45,7 @@ void markObject(Obj* object) {
 
 	if (vm.grayCapacity < vm.grayCount + 1) {
 		vm.grayCapacity = GROW_CAPACITY(vm.grayCapacity);
-		vm.grayStack = (Obj**)realloca(vm.grayStack, sizeof(Obj*) * vm.grayCapacity);
+		vm.grayStack = (Obj**)realloc(vm.grayStack, sizeof(Obj*) * vm.grayCapacity);
 		vm.grayStack[vm.grayCount++] = object;
 		if (vm.grayStack == NULL)
 			exit(1);
@@ -103,7 +103,7 @@ static void blackenObject(Obj* object) {
 		}
 		case OBJ_BOUND_METHOD: {
 			ObjBoundMethod* bound = (ObjBoundMethod*)object;
-			markValue(bound -> reciever);
+			markValue(bound -> receiver);
 			markObject((Obj*)bound -> method);
 			break;
 		}
@@ -114,7 +114,7 @@ static void freeObject(Obj* object) {
 	switch (object -> type) {
 		case OBJ_STRING: {
 			ObjString* string = (ObjString*)object;
-			FREE_ARRAY(char, string -> chars, string >length + 1);
+			FREE_ARRAY(char, string -> chars, string -> length + 1);
 			FREE(ObjString, object);
 			break;
 		}
@@ -217,10 +217,6 @@ void collectGarbage() {
 }
 
 void freeObjects() {
-	#ifdef DEBUG_LOG_GC
-	printf("%p free type %d\n", (void*)object, object -> type);
-	#endif
-
 	Obj* object = vm.objects;
 	while (object != NULL) {
 		Obj* next = object -> next;

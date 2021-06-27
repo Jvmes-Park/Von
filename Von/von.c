@@ -31,12 +31,6 @@ static void REPL() {
 }
 
 static char* readFile(const char* path) {
-	for (int i = 0; i < path.size(); i++) {
-		if (path[i] == '.') {
-			if (path[i + 1] != 'v' && path[i + 2] != 'o' && path[i + 3] != 'n')
-				printf("Error: Wrong file type. '.von' fles required.");
-		}
-	}
 	FILE* file = fopen(path, "rb");
 	if (file == NULL) {
 		fprintf(stderr, "Could not open file \"%s\".\n", path);

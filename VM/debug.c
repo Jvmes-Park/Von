@@ -16,7 +16,7 @@ static int simpleInstruction(const char* name, int offset) {
 }
 
 static int byteInstruction(const char* name, Chunk* chunk, int offset) {
-	uint8_t slot = chunk -> code[offet + 1];
+	uint8_t slot = chunk -> code[offset + 1];
 	printf("%-16s %4d\n", name, slot);
 	return offset + 2;
 }
@@ -139,7 +139,7 @@ int disassembleInstruction(Chunk* chunk, int offset) {
 		case OP_INVOKE:
 				 return invokeInstruction("OP_INVOKE", chunk, offset);
 		case OP_INHERIT:
-				 return simpleInsutrction("OP_INHERIT", offset);
+				 return simpleInstruction("OP_INHERIT", offset);
 		case OP_GET_SUPER:
 				 return constantInstruction("OP_GET_SUPER", chunk, offset);
 		case OP_SUPER_INVOKE:

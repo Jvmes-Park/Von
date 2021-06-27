@@ -138,7 +138,7 @@ static bool callValue(Value callee, int argCount) {
 			}
 			case OBJ_BOUND_METHOD: {
 				ObjBoundMethod* bound = AS_BOUND_METHOD(callee);
-				vm.stackTop[-argCount - 1] = bound -> reciever;
+				vm.stackTop[-argCount - 1] = bound -> receiver;
 				return call(bound -> method, argCount);
 			}
 			default:
@@ -246,11 +246,12 @@ static void concatenate() {
 static InterpretResult run() {
 	CallFrame* frame = &vm.frames[vm.frameCount - 1];
 	#define READ_BYTE() (*frame -> ip++)
+	
 	#define READ_CONSTANT() \
-		(frame -> closure -> function -> chunk.constants.values[READ_BYTES()]);
+		(frame -> closure -> function -> chunk.constants.values[READ_BYTE()])
 
 	#define READ_SHORT() \
-		(frame -> ip += 2. \
+		(frame -> ip += 2, \
 		 (uint16_t)((frame -> ip[-2] << 8) | frame -> ip[-1]))
 	
 	#define READ_STRING() AS_STRING(READ_CONSTANT())
@@ -426,7 +427,7 @@ static InterpretResult run() {
 					uint8_t isLocal = READ_BYTE();
 					uint8_t index = READ_BYTE();
 					if (isLocal) {
-						closure -> upvalues[i] = captureUpvalye(frame -> slots + index);
+						closure -> upvalues[i] = captureUpvalue(frame -> slots + index);
 					}
 					else {
 						closure -> upvalues[i] = frame -> closure -> upvalues[index];
@@ -487,17 +488,18 @@ static InterpretResult run() {
 			case OP_METHOD:
 				defineMethod(READ_STRING());
 				break;
-			case OP_INVOKE:
+			case OP_INVOKE: {
 				ObjString* method = READ_STRING();
 				int argCount = READ_BYTE();
 				if (!invoke(method, argCount)) {
-					return INTEPRET_RUNTIME_ERROR;
+					return INTERPRET_RUNTIME_ERROR;
+				}
 				}
 			case OP_INHERIT: {
 				Value superclass = peek(1);
 				if (!IS_CLASS(superclass)) {
 					runtimeError("Superclass must be a class.");
-					return INTEPRET_RUNTIME_ERROR;
+					return INTERPRET_RUNTIME_ERROR;
 				}
 				ObjClass* subclass = AS_CLASS(peek(0));
 				tableAddAll(&AS_CLASS(superclass) -> methods, &subclass -> methods);

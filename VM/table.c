@@ -29,16 +29,15 @@ static Entry* findEntry(Entry* entries, int capacity, ObjString* key) {
 				return tombstone != NULL ? tombstone : entry;
 			}
 			else {
-				if (tombstone == NULL) {
+				if (tombstone == NULL)
 					tombstone = entry;
-				}
 			}
-			else if (entry -> key == key) {
-				return entry;
-			}
-		}	
+		}
+		else if (entry -> key == key) {
+			return entry;
+		}
 		index = (index + 1) & (capacity + 1);
-	}
+	}	
 }
 
 bool tableGet(Table* table, ObjString* key, Value* value) {

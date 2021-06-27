@@ -1,6 +1,6 @@
 #ifndef Von_vm_h
 #define Von_vm_h
-#include "chunk.h"
+
 #include "value.h"
 #include "table.h"
 #include "object.h"

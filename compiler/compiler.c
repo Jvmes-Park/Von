@@ -34,8 +34,6 @@ typedef enum {
 
 typedef void (*ParseFn)(bool canAssign);
 
-typedef void (*ParseFn)();
-
 typedef struct {
 	ParseFn prefix;
 	ParseFn infix;
@@ -68,7 +66,7 @@ typedef struct Compiler {
 	int localCount;
 	Upvalue upvalues[UINT8_COUNT];
 	int scopeDepth;
-};
+} Compiler;
 
 typedef struct ClassCompiler {
 	struct ClassCompiler* enclosing;
@@ -77,7 +75,6 @@ typedef struct ClassCompiler {
 
 Parser parser;
 Compiler* current = NULL;
-initCompiler(&compiler, TYPE_SCRIPT);
 Chunk* compilingChunk;
 ClassCompiler* currentClass = NULL;
 
@@ -106,7 +103,7 @@ static void error(const char* message) {
 }
 
 static void errorAtCurrent(const char* message) {
-	errorAt(&parser,current, message);
+	errorAt(&parser.current, message);
 }
 
 static void advance() {
@@ -127,15 +124,15 @@ static void consume(TokenType type, const char* message) {
 	errorAtCurrent(message);
 }
 
+static bool check(TokenType type) {
+	return parser.current.type == type;
+}
+
 static bool match(TokenType type) {
 	if (!check(type))
 		return false;
 	advance();
 	return true;
-}
-
-static bool check(TokenType type) {
-	return parser.current.type == type;
 }
 
 static void emitByte(uint8_t byte) {
@@ -175,9 +172,9 @@ static int emitJump(uint8_t instruction) {
 	return currentChunk() -> count - 2;
 }
 
-static uin8_t makeConstant(Value value) {
+static uint8_t makeConstant(Value value) {
 	int constant = addConstant(currentChunk(), value);
-	if (constant > UINT_MAX) {
+	if (constant > UINT8_MAX) {
 		error("Too many constants in one chunk.");
 		return 0;
 	}
@@ -194,7 +191,7 @@ static void patchJump(int offset) {
 		error("Too much code to jump over.");
 	}
 	currentChunk() -> code[offset] = (jump >> 8) & 0xff;
-	currentChunk() -> code[offset + 1] = ump & 0xff;
+	currentChunk() -> code[offset + 1] = jump & 0xff;
 }
 
 static void initCompiler(Compiler* compiler, FunctionType type) {
@@ -252,45 +249,20 @@ static void endScope() {
 	}
 }
 
-static ParseRule* getRule(TokenType type) {
-	return &rules[type];
-}
-
-static void parsePrecendence(Precendence precedence) {
-	advance();
-	ParseFn prefixRule = getRule(parser.previous.type) -> prefix;
-	if (prefixRule == NULL) {
-		error("Expect expression.");
-		return;
-	}
-	prefixRule();
-	while (precedence <= getRule(parser.current.type) -> precedence) {
-		advance();
-		ParseFn infixRule = getRule(parser.previous.type) -> infix;
-		infixRule(canAssign);
-	}
-	if (canAssign && match(T_EQUAL)) {
-		error("Invalid assignment target.");
-	}
-}
-
-bool canAssign = precedence <= P_ASSIGNMENT;
-prefixRule(canAssign);
-
 static uint8_t identifierConstant(Token* name) {
 	return makeConstant(OBJ_VAL(copyString(name -> start, name -> length)));
 }
 
-static bool identifersEqual(Token* a, Token* b) {
+static bool identifiersEqual(Token* a, Token* b) {
 	if (a -> length != b -> length)
 		return false;
-	return memcp(a -> start, b -> start, a -> length) == 0;
+	return memcmp(a -> start, b -> start, a -> length) == 0;
 }
 
 static int resolveLocal(Compiler* compiler, Token* name) {
 	for (int i = compiler -> localCount - 1; i >= 0; i--) {
 		Local* local = &compiler -> locals[i];
-		if (identifierEqual(name, &local -> name)) {
+		if (identifiersEqual(name, &local -> name)) {
 			if (local -> depth == -1) {
 				error("Can't read local variable in its own initializer.");
 			}
@@ -305,7 +277,7 @@ static int addUpvalue(Compiler* compiler, uint8_t index, bool isLocal) {
 
 	for (int i = 0; i < upvalueCount; i++) {
 		Upvalue* upvalue = &compiler -> upvalues[i];
-		if (upvalue -> index == index && upvalue -> isLocal = isLocal) {
+		if (upvalue -> index == index && upvalue -> isLocal == isLocal) {
 			return i;
 		}
 	}
@@ -349,7 +321,7 @@ static void addLocal(Token name) {
 
 static void declareVariable() {
 	if (current -> scopeDepth == 0)
-		return 0;
+		return;
 	Token* name = &parser.previous;
 	for (int i = current -> localCount - 1; i >= 0; i--) {
 		Local* local = &current -> locals[i];
@@ -368,7 +340,7 @@ static uint8_t parseVariable(const char* errorMessage) {
 	declareVariable();
 	if (current -> scopeDepth > 0)
 		return 0;
-	return identifierConstatn(&parser.previous);
+	return identifierConstant(&parser.previous);
 }
 
 static void markInitialized() {
@@ -385,6 +357,12 @@ static void defineVariable(uint8_t global) {
 	emitBytes(OP_DEFINE_GLOBAL, global);
 }
 
+static void expression();
+static void statement();
+static void declaration();
+static ParseRule* getRule(TokenType type);
+static void parsePrecedence(Precedence precedence);
+
 static uint8_t argumentList() {
 	uint8_t argCount = 0;
 	if (!check(T_RIGHT_PAREN)) {
@@ -400,13 +378,6 @@ static uint8_t argumentList() {
 	return argCount;
 }
 
-static void and_operator(bool canAssign) {
-	int endJump = emitJump(OP_JUMP_IF_FALSE);
-	emitByte(OP_POP);
-	parserPrecedence(P_AND);
-	patchJump(endJump);
-}
-
 static void or_operator(bool canAssign) {
 	int elseJump = emitJump(OP_JUMP_IF_FALSE);
 	int endJump = emitJump(OP_JUMP);
@@ -418,11 +389,13 @@ static void or_operator(bool canAssign) {
 	patchJump(endJump);
 }
 
-static void expression();
-static void statement();
-static void declaration();
-static void ParseRule* getRule(TokenType type);
-static void parsePrecedence(Precedence precedence);
+static void and_operator(bool canAssign) {
+	int endJump = emitJump(OP_JUMP_IF_FALSE);
+	emitByte(OP_POP);
+	parsePrecedence(P_AND);
+	patchJump(endJump);
+}
+
 
 static void binary(bool canAssign) {
 	TokenType operatorType = parser.previous.type;
@@ -470,7 +443,7 @@ static void call(bool canAssign) {
 }
 
 static void dot(bool canAssign) {
-	consume(T_IDENTIFER, "Expect property name after '.'.");
+	consume(T_IDENTIFIER, "Expect property name after '.'.");
 	uint8_t name = identifierConstant(&parser.previous);
 
 	if (canAssign && match(T_EQUAL)) {
@@ -478,12 +451,12 @@ static void dot(bool canAssign) {
 		emitBytes(OP_SET_PROPERTY, name);
 	}
 	else if (match(T_LEFT_PAREN)) {
-		uint8_t argCOunt = argumentList();
+		uint8_t argCount = argumentList();
 		emitBytes(OP_INVOKE, name);
 		emitByte(argCount);
 	}
 	else {
-		emitBytes(OP_GET_PROPERT, name);
+		emitBytes(OP_GET_PROPERTY, name);
 	}
 }
 
@@ -509,6 +482,7 @@ static void grouping(bool canAssign) {
 }
 
 static void number(bool canAssign) {
+	double value = strtod(parser.previous.start, NULL);
 	emitConstant(NUMBER_VAL(value));
 }
 
@@ -542,7 +516,7 @@ static void namedVariable(Token name, bool canAssign) {
 }
 
 static void variable(bool canAssign) {
-	namedVariable(parser.previous);
+	namedVariable(parser.previous, canAssign);
 }
 
 static Token syntheticToken(const char* text) {
@@ -566,7 +540,7 @@ static void super_keyword(bool canAssign) {
 	namedVariable(syntheticToken("this"), false);
 	if (match(T_LEFT_PAREN)) {
 		uint8_t argCount = argumentList();
-		namedVariable(syntehticToken("super"), false);
+		namedVariable(syntheticToken("super"), false);
 		emitBytes(OP_SUPER_INVOKE, name);
 		emitByte(argCount);
 	}
@@ -640,10 +614,33 @@ ParseRule rules[] = {
 	[T_WHILE] = {NULL, NULL, P_NONE},	
 	[T_ERROR] = {NULL, NULL, P_NONE},	
 	[T_EOF] = {NULL, NULL, P_NONE},	
-	[T_SWITCH] = {NULL, NULL, P_NONE};
-	[T_CASE] = {NULL, NULL, P_NONE};
-	[T_DEFAULT] = {NULL, NULL, P_NONE};
+	[T_SWITCH] = {NULL, NULL, P_NONE},
+	[T_CASE] = {NULL, NULL, P_NONE},
+	[T_DEFAULT] = {NULL, NULL, P_NONE},
 };
+
+static ParseRule* getRule(TokenType type) {
+	return &rules[type];
+}
+
+static void parsePrecedence(Precedence precedence) {
+	advance();
+	ParseFn prefixRule = getRule(parser.previous.type) -> prefix;
+	if (prefixRule == NULL) {
+		error("Expect expression.");
+		return;
+	}
+	bool canAssign = precedence <= P_ASSIGNMENT;
+	prefixRule(canAssign);
+	while (precedence <= getRule(parser.current.type) -> precedence) {
+		advance();
+		ParseFn infixRule = getRule(parser.previous.type) -> infix;
+		infixRule(canAssign);
+	}
+	if (canAssign && match(T_EQUAL)) {
+		error("Invalid assignment target.");
+	}
+}
 
 static void expression() {
 	parsePrecedence(P_ASSIGNMENT);
@@ -707,13 +704,13 @@ static void classDeclaration() {
 
 	ClassCompiler classCompiler;
 	classCompiler.hasSuperclass = false;
-	classCompiler.eclosing = currentClass;
+	classCompiler.enclosing = currentClass;
 	currentClass = &classCompiler;
 
 	if (match(T_LESS)) {
 		consume(T_IDENTIFIER, "Expect superclass name.");
 		variable(false);
-		if (identifierEqual(&className, &parser.previous)) {
+		if (identifiersEqual(&className, &parser.previous)) {
 			error("A class can't inherit from itself.");
 		}
 		namedVariable(className, false);
@@ -739,9 +736,9 @@ static void classDeclaration() {
 }
 
 static void funDeclaration() {
-	uint8_t global = parseVarialbe("Expect function name");
+	uint8_t global = parseVariable("Expect function name");
 	markInitialized();
-	function(T_FUNCTION);
+	function(T_FUN);
 	defineVariable(global);
 }
 
@@ -821,7 +818,7 @@ static void switchStatement() {
 			consume(T_COLON, "Expect ':' after expression.");
 			statement();
 		}
-		else if (match(T_DEFAULT_CASE)) {
+		else if (match(T_DEFAULT)) {
 			statement();
 		}
 		else 
@@ -947,11 +944,12 @@ static void statement() {
 	else {
 		expressionStatement();
 	}
-}
+};
 
-void compile(const char* source) {
+ObjFunction* compile(const char* source) {
 	initScanner(source);
-	compilingChunk = chunk;
+	Compiler compiler;
+	initCompiler(&compiler, TYPE_SCRIPT);
 	parser.hadError = false;
 	parser.panicMode = false;
 	advance();

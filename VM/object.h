@@ -17,7 +17,7 @@
 
 #define AS_STRING(value)	((ObjString*)AS_OBJ(value))
 #define AS_CSTRING(value)	(((ObjString*)AS_OBJ(value)) -> chars)
-#define AS_FUNCTION(value)	(((ObjString*)AS_OBJ(value)))
+#define AS_FUNCTION(value)	((ObjFunction*)AS_OBJ(value))
 #define AS_NATIVE(value)\
 	(((ObjNative*)AS_OBJ(value)) -> function)
 #define AS_CLOSURE(value)	((ObjClosure*)AS_OBJ(value))
@@ -94,7 +94,7 @@ typedef struct {
 
 typedef struct {
 	Obj obj;
-	Value reciever;
+	Value receiver;
 	ObjClosure* method;
 } ObjBoundMethod;
 
@@ -104,6 +104,7 @@ ObjClosure* newClosure(ObjFunction* function);
 ObjFunction* newFunction();
 ObjInstance* newInstance(ObjClass* klass);
 ObjNative* newNative(NativeFn function);
+ObjString* takeString(char* chars, int length);
 ObjString* copyString(const char* chars, int length);
 ObjUpvalue* newUpvalue(Value* slot);
 
