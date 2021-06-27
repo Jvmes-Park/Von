@@ -497,7 +497,7 @@ static void namedVariable(Token name, bool canAssign) {
 		getOp = OP_GET_LOCAL;
 		setOp = OP_SET_LOCAL;
 	}
-	else if ((arg = resolveUpValue(current, &name)) != 1) {
+	else if ((arg = resolveUpvalue(current, &name)) != 1) {
 		getOp = OP_GET_UPVALUE;
 		setOp = OP_SET_UPVALUE;
 	}
@@ -558,7 +558,7 @@ static void this_variable(bool canAssign) {
 	variable(false);
 }
 
-static void unary() {
+static void unary(bool canAssign) {
 	TokenType operatorType = parser.previous.type;
 	parsePrecedence(P_UNARY);
 	switch(operatorType) {
